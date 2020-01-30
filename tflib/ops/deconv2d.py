@@ -86,7 +86,7 @@ def Deconv2D(
                 filters = filters * tf.expand_dims(target_norms / norms, 1)
 
 
-        inputs = tf.transpose(inputs, [0,2,3,1], name='NCHW_to_NHWC')
+        # inputs = tf.transpose(inputs, [0,2,3,1], name='NCHW_to_NHWC')
 
         input_shape = tf.shape(inputs)
         try: # tf pre-1.0 (top) vs 1.0 (bottom)
@@ -95,9 +95,9 @@ def Deconv2D(
             output_shape = tf.stack([input_shape[0], 2*input_shape[1], 2*input_shape[2], output_dim])
 
         result = tf.nn.conv2d_transpose(
-            value=inputs, 
+            value=inputs,
             filter=filters,
-            output_shape=output_shape, 
+            output_shape=output_shape,
             strides=[1, 2, 2, 1],
             padding='SAME'
         )
@@ -109,7 +109,7 @@ def Deconv2D(
             )
             result = tf.nn.bias_add(result, _biases)
 
-        result = tf.transpose(result, [0,3,1,2], name='NHWC_to_NCHW')
+        # result = tf.transpose(result, [0,3,1,2], name='NHWC_to_NCHW')
 
 
         return result

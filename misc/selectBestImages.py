@@ -55,7 +55,7 @@ def generate_best_images():
                 samples = session.run(genr, feed_dict={sample_labels: curLabel})
                 samples = np.reshape(samples,[-1, 3, DIMI, DIMI])
                 samples = ((samples+1.)*(255.99/2)).astype('int32')
-                
+
                 prediction,accuracy,realness = session.run([disc_real_class,realAccuracy,disc_real] , feed_dict = {all_real_data_conv: samples, all_real_label_conv: curLabel})
                 
                 guess = np.argmax(prediction,1)

@@ -8,6 +8,8 @@ import collections
 import time
 import _pickle as pickle
 
+import os
+from misc.image_params import IMAGE_OUTPUT_PATH
 
 _since_beginning = collections.defaultdict(lambda: {})
 _since_last_flush = collections.defaultdict(lambda: {})
@@ -33,7 +35,7 @@ def flush():
 		plt.plot(x_vals, y_vals)
 		plt.xlabel('iteration')
 		plt.ylabel(name)
-		plt.savefig('generated/'+name.replace(' ', '_')+'.jpg')
+		plt.savefig(os.path.join(IMAGE_OUTPUT_PATH, name.replace(' ', '_')+'.jpg'))
 
 	print("iter {}\t{}".format(_iter[0], "\t".join(prints)))
 	_since_last_flush.clear()

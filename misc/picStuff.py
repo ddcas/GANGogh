@@ -3,33 +3,21 @@ A script designed to 1) resize all of the downloaded images to desired dimension
 """
 
 import os
-import scipy.misc
-import random
 
-root='./fullimages'
+from PIL import Image
 
+from image_params import IMAGE_DIM, IMAGE_INPUT_PATH, IMAGE_OUTPUT_PATH
 
-#Set your own PATH 
-PATH = os.path.normpath('C:/Users/kenny/Desktop/toGit/misc/smallimages/')
-
-for subdir, dirs, files in os.walk(root):
-    style = subdir[2:]
-    name =  style
-    if len(style) < 1:
-        continue
-    try:
-        os.stat(PATH + name)
-    except:
-        os.mkdir(PATH + name)
-    
-    i = 0
-    for f in files:
-        source = style + '\\' + f
-        print(str(i) + source)
+for genre in os.listdir(os.path.join('..', IMAGE_INPUT_PATH)):
+    if not os.path.isdir(os.path.join(IMAGE_OUTPUT_PATH, genre)):
+        os.makedirs(os.path.join(IMAGE_OUTPUT_PATH, genre))
+    for i, f in enumerate(os.listdir(os.path.join('..', IMAGE_INPUT_PATH, genre))):
+        source = os.path.join('..', IMAGE_INPUT_PATH, genre, f)
+        print(str(i) + source, end='\r')
         try:
-            image = scipy.misc.imread(source)
-            image = scipy.misc.imresize(image,(64,64))
-            scipy.misc.imsave(PATH + name + '\\' + str(i) + '.png',image)
-            i+=1
-        except Exception:
+            image = Image.open(source)
+            image = image.resize((IMAGE_DIM,IMAGE_DIM))
+            image.save(os.path.join(IMAGE_OUTPUT_PATH, genre, str(i) + '.png'))
+        except Exception as e:
             print('missed it: ' + source)
+            print(e)

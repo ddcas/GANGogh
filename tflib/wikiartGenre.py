@@ -2,31 +2,31 @@
 
 
 import numpy as np
-import scipy.misc
+# import scipy.misc
 import time
 import random
 import os
-#Set the dimension of images you want to be passed in to the network
-DIM = 64
 
-#Set your own path to images
-path = os.path.normpath('C:/Users/kenny/Desktop/toGit/misc/smallimages/')
+from PIL import Image
+
+#Set the dimension of images you want to be passed in to the network
+from misc.image_params import IMAGE_DIM, IMAGE_INPUT_PATH
 
 #This dictionary should be updated to hold the absolute number of images associated with each genre used during training
-styles = {'abstract': 14794,
-          'animal-painting': 1319,
-          'cityscape': 5833,
-          'figurative': 3335,
-          'flower-painting': 1260,
-          'genre-painting': 14881,
-          'landscape': 14893,
-          'marina': 1199,
-          'mythological-painting': 1670,
-          'nude-painting-nu': 2276,
-          'portrait': 14496,
-          'religious-painting': 7915,
-          'still-life': 2314,
-          'symbolic-painting': 2454}
+styles = {'abstract': 14999,
+          'animal-painting': 1798,
+          'cityscape': 6598,
+          'figurative': 4500,
+          'flower-painting': 1800,
+          'genre-painting': 14997,
+          'landscape': 15000,
+          'marina': 1800,
+          'mythological-painting': 2099,
+          'nude-painting-nu': 3000,
+          'portrait': 14999,
+          'religious-painting': 8400,
+          'still-life': 2996,
+          'symbolic-painting': 2999}
 
 styleNum = {'abstract': 0,
             'animal-painting': 1,
@@ -73,8 +73,8 @@ def inf_gen(gen):
     while True:
         for (images,labels) in gen():
             yield images,labels
-            
-    
+
+
 
 def make_generator(files, batch_size, n_classes):
     if batch_size % n_classes != 0:
@@ -83,12 +83,13 @@ def make_generator(files, batch_size, n_classes):
     class_batch = batch_size // n_classes
 
     generators = []
-    
+
     def get_epoch():
 
         while True:
 
-            images = np.zeros((batch_size, 3, DIM, DIM), dtype='int32')
+            # images = np.zeros((batch_size, 3, IMAGE_DIM, IMAGE_DIM), dtype='int32')
+            images = np.zeros((batch_size, IMAGE_DIM, IMAGE_DIM, 3), dtype='int32')
             labels = np.zeros((batch_size, n_classes))
             n=0
             for style in styles:
@@ -99,9 +100,19 @@ def make_generator(files, batch_size, n_classes):
                         curr = 0
                         random.shuffle(list(files[style]))
                     t0=time.time()
-                    image = scipy.misc.imread("{}/{}/{}.png".format(path, style, str(curr)),mode='RGB')
-                    #image = scipy.misc.imresize(image,(DIM,DIM))
-                    images[n % batch_size] = image.transpose(2,0,1)
+                    # image = scipy.misc.imread("{}/{}/{}.png".format(IMAGE_INPUT_PATH, style, str(curr)),mode='RGB')
+                    try:
+                        image = Image.open("{}/{}/{}.png".format(IMAGE_INPUT_PATH, style, str(curr)))
+                    except FileNotFoundError as e:
+                        print('\n\n\n{}/{}/{}.png does not exist! Skipping...'.format(IMAGE_INPUT_PATH, style, str(curr)))
+                        n += 1
+                        curr += 1
+                        continue
+                    image = image.convert('RGB')
+                    image = np.asarray(image)
+                    #image = scipy.misc.imresize(image,(IMAGE_DIM,IMAGE_DIM))
+                    # images[n % batch_size] = image.transpose(2,0,1)
+                    images[n % batch_size] = image
                     labels[n % batch_size, int(styleLabel)] = 1
                     n+=1
                     curr += 1
