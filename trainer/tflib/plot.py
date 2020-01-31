@@ -6,10 +6,11 @@ import matplotlib.pyplot as plt
 
 import collections
 import time
-import _pickle as pickle
+# import _pickle as pickle
+# import pickle as pickle
 
 import os
-from misc.image_params import IMAGE_OUTPUT_PATH
+from ..misc.image_params import IMAGE_OUTPUT_PATH
 
 _since_beginning = collections.defaultdict(lambda: {})
 _since_last_flush = collections.defaultdict(lambda: {})
@@ -40,5 +41,5 @@ def flush():
 	print("iter {}\t{}".format(_iter[0], "\t".join(prints)))
 	_since_last_flush.clear()
 
-	with open('log.pkl', 'wb') as f:
-		pickle.dump(dict(_since_beginning), f, 4)
+	# with open('log.pkl', 'wb') as f:
+	# 	pickle.dump(dict(_since_beginning), f, 4)

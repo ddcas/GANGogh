@@ -5,12 +5,13 @@ import numpy as np
 # import scipy.misc
 import time
 import random
-import os
+import os, subprocess
 
 from PIL import Image
 
 #Set the dimension of images you want to be passed in to the network
-from misc.image_params import IMAGE_DIM, IMAGE_INPUT_PATH
+from ..misc.image_params import IMAGE_DIM, IMAGE_INPUT_PATH, NUM_CLASSES
+from tensorflow.python.lib.io import file_io
 
 #This dictionary should be updated to hold the absolute number of images associated with each genre used during training
 styles = {'abstract': 14999,
@@ -58,9 +59,14 @@ curPos = {'abstract': 0,
           'still-life': 0,
           'symbolic-painting': 0}
 
+
+def copy_file_to_gcs(job_dir, file_path):
+    with file_io.FileIO(file_path, mode='rb') as input_f:
+        with file_io.FileIO(os.path.join(job_dir, file_path), mode='w+') as output_f:
+            output_f.write(input_f.read())
+
 testNums = {}
 trainNums = {}
-
 #Generate test set of images made up of 1/20 of the images (per genre)
 for k,v in styles.items():
     # put a twentieth of paintings in here
@@ -74,17 +80,59 @@ def inf_gen(gen):
         for (images,labels) in gen():
             yield images,labels
 
+def download_dataset(path_data_up, path_data_down, parent_folder, num_files):
+    if not os.path.isdir(path_data_down):
+        os.makedirs(path_data_down)
 
+    print('\nDownloading dataset...')
+    child_processes = []
+    list_styles = ['abstract', 'animal-painting', 'cityscape', 'figurative', 'flower-painting', 'genre-painting',
+                   'landscape', 'marina', 'mythological-painting', 'nude-painting-nu', 'portrait', 'religious-painting',
+                   'still-life', 'symbolic-painting']
+    list_lang = ['{}/{}'.format(parent_folder, style) for style in list_styles]
+    print('\n', path_data_up, path_data_down, list_lang)
+    if num_files < 15000:  # maximum number of segments in ../< parent data folder >../
+        for lang in list_lang:
+            # create local subdirectories for the downloaded files
+            if not os.path.isdir(os.path.join(path_data_down, lang)):
+                os.makedirs(os.path.join(path_data_down, lang))
 
-def make_generator(files, batch_size, n_classes):
+            # create the command that will download the N first files in the dataset directories
+            # command = 'gsutil -m -q cp -r `gsutil -q ls {} | head -{}` {}'.format(
+            command = 'gsutil -m cp -r `gsutil ls {} | head -{}` {}'.format(
+                path_data_up + lang,
+                num_files,
+                path_data_down + '/' + lang + '/'
+            )
+            # create subprocess and add it to the queue
+            p = subprocess.Popen(command, shell=True)
+            child_processes.append(p)
+    else:
+        for lang in list_lang:
+            if not os.path.isdir(os.path.join(path_data_down, parent_folder)):
+                os.makedirs(os.path.join(path_data_down, parent_folder))
+            p = subprocess.Popen(['gsutil', '-m', '-q', 'cp', '-r', path_data_up + lang, path_data_down+'/'+parent_folder+'/'])
+            # p = subprocess.Popen(['gsutil', '-m', 'cp', '-r', path_data_up + lang, path_data_down + '/' + lang])
+            child_processes.append(p)
+
+    # wait for all the subprocesses to finish
+    for cp in child_processes:
+        cp.wait()
+
+    return
+
+def make_generator(path_data_up, num_files, files, batch_size, n_classes, local):
     if batch_size % n_classes != 0:
         raise ValueError("batch size must be divisible by num classes")
 
     class_batch = batch_size // n_classes
 
-    generators = []
+    path_data_down = IMAGE_INPUT_PATH if local else os.path.join('/tmp', IMAGE_INPUT_PATH)
 
+    parent_folder = 'images-64'
     def get_epoch():
+        if not local:
+            download_dataset(path_data_up, path_data_down, parent_folder, num_files)
 
         while True:
 
@@ -100,11 +148,16 @@ def make_generator(files, batch_size, n_classes):
                         curr = 0
                         random.shuffle(list(files[style]))
                     t0=time.time()
-                    # image = scipy.misc.imread("{}/{}/{}.png".format(IMAGE_INPUT_PATH, style, str(curr)),mode='RGB')
+                    # image = scipy.misc.imread("{}/{}/{}.png".format(path_input, style, str(curr)),mode='RGB')
                     try:
-                        image = Image.open("{}/{}/{}.png".format(IMAGE_INPUT_PATH, style, str(curr)))
-                    except FileNotFoundError as e:
-                        print('\n\n\n{}/{}/{}.png does not exist! Skipping...'.format(IMAGE_INPUT_PATH, style, str(curr)))
+                        image = Image.open(
+                            os.path.join(path_data_down, parent_folder, style, str(curr) + '.png')
+                        )
+                    # except FileNotFoundError as e:
+                    except Exception as e:
+                        print('\n\n\n{} does not exist! Skipping...'.format(
+                            os.path.join(path_data_down, parent_folder, style, str(curr) + '.png')))
+                        print(e)
                         n += 1
                         curr += 1
                         continue
@@ -129,10 +182,11 @@ def make_generator(files, batch_size, n_classes):
         
     return get_epoch
 
-def load(batch_size):
+
+def load(path_up, num_files, batch_size, local):
     return (
-        make_generator(trainNums, batch_size, 14),
-        make_generator(testNums, batch_size, 14),
+        make_generator(path_up, num_files, trainNums, batch_size, NUM_CLASSES, local),
+        make_generator(path_up, num_files, testNums, batch_size, NUM_CLASSES, local),
     )
 
 #Testing code to validate that the logic in generating batches is working properly and quickly

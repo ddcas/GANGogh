@@ -1,4 +1,5 @@
-import tflib as lib
+# import tflib as lib
+from ...tflib import param
 
 import numpy as np
 import tensorflow as tf
@@ -114,7 +115,7 @@ def Linear(
 
         weight_values *= gain
 
-        weight = lib.param(
+        weight = param(
             name + '.W',
             weight_values
         )
@@ -125,7 +126,7 @@ def Linear(
             norm_values = np.sqrt(np.sum(np.square(weight_values), axis=0))
             # norm_values = np.linalg.norm(weight_values, axis=0)
 
-            target_norms = lib.param(
+            target_norms = param(
                 name + '.g',
                 norm_values
             )
@@ -148,7 +149,7 @@ def Linear(
         if biases:
             result = tf.nn.bias_add(
                 result,
-                lib.param(
+                param(
                     name + '.b',
                     np.zeros((output_dim,), dtype='float32')
                 )

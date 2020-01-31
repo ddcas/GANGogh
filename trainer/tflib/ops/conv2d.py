@@ -1,4 +1,5 @@
-import tflib as lib
+# import tflib as lib
+from ...tflib import param
 
 import numpy as np
 import tensorflow as tf
@@ -41,8 +42,8 @@ def Conv2D(name, input_dim, output_dim, filter_size, inputs, he_init=True, mask_
             mask[center, center+1:, :, :] = 0.
 
             # Mask out future channels
-            for i in xrange(mask_n_channels):
-                for j in xrange(mask_n_channels):
+            for i in range(mask_n_channels):
+                for j in range(mask_n_channels):
                     if (mask_type=='a' and i >= j) or (mask_type=='b' and i > j):
                         mask[
                             center,
@@ -85,13 +86,13 @@ def Conv2D(name, input_dim, output_dim, filter_size, inputs, he_init=True, mask_
         # print "WARNING IGNORING GAIN"
         filter_values *= gain
 
-        filters = lib.param(name+'.Filters', filter_values)
+        filters = param(name+'.Filters', filter_values)
 
         if weightnorm==None:
             weightnorm = _default_weightnorm
         if weightnorm:
             norm_values = np.sqrt(np.sum(np.square(filter_values), axis=(0,1,2)))
-            target_norms = lib.param(
+            target_norms = param(
                 name + '.g',
                 norm_values
             )
@@ -114,7 +115,7 @@ def Conv2D(name, input_dim, output_dim, filter_size, inputs, he_init=True, mask_
         )
 
         if biases:
-            _biases = lib.param(
+            _biases = param(
                 name+'.Biases',
                 np.zeros(output_dim, dtype='float32')
             )

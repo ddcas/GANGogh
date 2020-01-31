@@ -1,0 +1,4 @@
+IMAGE_DIM = 64
+IMAGE_INPUT_PATH = 'datasets'
+IMAGE_OUTPUT_PATH = 'output'
+NUM_CLASSES = 14

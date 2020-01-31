@@ -1,4 +1,5 @@
-import tflib as lib
+# import tflib as lib
+from ...tflib import param
 
 import numpy as np
 import tensorflow as tf
@@ -68,7 +69,7 @@ def Deconv2D(
 
         filter_values *= gain
 
-        filters = lib.param(
+        filters = param(
             name+'.Filters',
             filter_values
         )
@@ -77,7 +78,7 @@ def Deconv2D(
             weightnorm = _default_weightnorm
         if weightnorm:
             norm_values = np.sqrt(np.sum(np.square(filter_values), axis=(0,1,3)))
-            target_norms = lib.param(
+            target_norms = param(
                 name + '.g',
                 norm_values
             )
@@ -103,7 +104,7 @@ def Deconv2D(
         )
 
         if biases:
-            _biases = lib.param(
+            _biases = param(
                 name+'.Biases',
                 np.zeros(output_dim, dtype='float32')
             )
